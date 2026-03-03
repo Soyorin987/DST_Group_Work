@@ -1,5 +1,6 @@
 package cn.edu.zju.servlet;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -13,17 +14,15 @@ public class CounterServlet extends HttpServlet {
 
     private int counter = 0;
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 
+    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        doGet(request, response);
     }
 
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         counter = counter + 1;
-        PrintWriter out = response.getWriter();
-        out.write("<html>");
-        out.write("<body>");
-        out.write("Total visit count: " + counter);
-        out.write("</body>");
-        out.write("</html>");
+        request.setAttribute("counter", counter);
+        RequestDispatcher rd = request.getRequestDispatcher("/views/counter.jsp");
+        rd.forward(request, response);
     }
 }
