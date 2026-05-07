@@ -227,3 +227,11 @@ CREATE TABLE favorites (
                            UNIQUE KEY uq_user_resource (user_id, resource_type, resource_id),
                            INDEX idx_user (user_id)
 );
+
+CREATE TABLE IF NOT EXISTS users (
+                                     id BIGINT AUTO_INCREMENT PRIMARY KEY,
+                                     username VARCHAR(255) NOT NULL UNIQUE,
+    password_hash VARCHAR(255) NOT NULL,
+    authorization VARCHAR(255),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
