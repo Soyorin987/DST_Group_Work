@@ -111,6 +111,11 @@ public class FavoriteController {
 
         try {
             List<Drug> favoriteDrugs = favoriteDao.findFavoriteDrugsByUserId(user.getId());
+
+            System.out.println("DEBUG /favorites username = " + user.getUsername());
+            System.out.println("DEBUG /favorites userId = " + user.getId());
+            System.out.println("DEBUG /favorites favoriteDrugs size = " + favoriteDrugs.size());
+
             req.setAttribute("drugs", favoriteDrugs);
             req.getRequestDispatcher("/views/favorites.jsp").forward(req, resp);
 

@@ -235,3 +235,8 @@ CREATE TABLE IF NOT EXISTS users (
     authorization VARCHAR(255),
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     );
+
+ALTER TABLE drug_label
+    ADD COLUMN efficacy_summary LONGTEXT NULL,
+    ADD COLUMN response_warning LONGTEXT NULL,
+    ADD COLUMN alternative_drug LONGTEXT NULL;

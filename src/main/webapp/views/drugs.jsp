@@ -1,18 +1,10 @@
-<%--
-  Created by IntelliJ IDEA.
-  User: hello
-  Date: 2019-12-3
-  Time: 15:37
---%>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ page contentType="text/html;charset=UTF-8" language="java" isELIgnored="false" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ page isELIgnored="false" %>
 
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>Drugs</title>
 
     <link href="<%= request.getContextPath() %>/static/bootstrap/css/bootstrap.css" rel="stylesheet">
@@ -43,6 +35,10 @@
         .favorite-btn:hover {
             border-color: #007bff;
         }
+
+        .search-bar {
+            margin-bottom: 18px;
+        }
     </style>
 </head>
 
@@ -66,6 +62,27 @@
             <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
                 <h2>Drugs</h2>
             </div>
+
+            <form class="search-bar" method="get" action="<%= request.getContextPath() %>/drugs">
+                <div class="input-group">
+                    <input
+                            type="text"
+                            name="keyword"
+                            class="form-control"
+                            placeholder="Search by drug ID, name, class, URL or biomarker"
+                            value="${keyword}">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary" type="submit">Search</button>
+                        <a class="btn btn-outline-secondary" href="<%= request.getContextPath() %>/drugs">Reset</a>
+                    </div>
+                </div>
+            </form>
+
+            <c:if test="${not empty keyword}">
+                <p class="text-muted">
+                    Search result for: <strong>${keyword}</strong>
+                </p>
+            </c:if>
 
             <div class="table-responsive">
                 <table class="table table-striped table-sm">

@@ -2,50 +2,22 @@ package cn.edu.zju.dao;
 
 import cn.edu.zju.bean.Drug;
 import cn.edu.zju.bean.Favorite;
+import cn.edu.zju.dbutils.DBUtils;
 
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Properties;
 
 public class FavoriteDao {
-    private final String jdbcUrl;
-    private final String jdbcUser;
-    private final String jdbcPassword;
-
-    public FavoriteDao() {
-        try (InputStream in = getClass().getClassLoader().getResourceAsStream("app.properties")) {
-            if (in == null) {
-                throw new RuntimeException("Cannot find app.properties in classpath.");
-            }
-
-            Properties p = new Properties();
-            p.load(new InputStreamReader(in, StandardCharsets.UTF_8));
-
-            jdbcUrl = p.getProperty("jdbc.url");
-            jdbcUser = p.getProperty("jdbc.username");
-            jdbcPassword = p.getProperty("jdbc.password");
-
-            if (jdbcUrl == null || jdbcUser == null) {
-                throw new RuntimeException("Database configuration is incomplete.");
-            }
-
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to load database configuration.", e);
-        }
-    }
 
     private Connection getConn() throws SQLException {
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-        } catch (ClassNotFoundException e) {
-            throw new SQLException("MySQL JDBC driver not found. Please check WEB-INF/lib.", e);
+        Connection connection = DBUtils.getConnection();
+
+        if (connection == null) {
+            throw new SQLException("Failed to get database connection from DBUtils.");
         }
 
-        return DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword);
+        return connection;
     }
 
     public void save(Favorite f) throws SQLException {

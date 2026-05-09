@@ -4,90 +4,368 @@ import cn.edu.zju.bean.Drug;
 import cn.edu.zju.bean.DrugLabel;
 import cn.edu.zju.dao.DrugDao;
 import cn.edu.zju.dao.DrugLabelDao;
-import cn.edu.zju.dbutils.DBUtils;
 import com.google.gson.Gson;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
+import java.util.regex.Pattern;
 
 public class DrugLabelCrawler extends BaseCrawler {
-
     private static final Logger log = LoggerFactory.getLogger(DrugLabelCrawler.class);
 
-    public static final String URL_DRUG_LABEL = "https://api.pharmgkb.org/v1/site/labelsByDrug";
-    public static final String URL_DRUG_LABEL_DETAIL = "https://api.pharmgkb.org/v1/site/page/drugLabels/%s?view=base";
+    private static final Pattern HTML_TAG_PATTERN = Pattern.compile("<[^>]+>");
+    private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
+
+    public static final String URL_DRUG_BY_LABEL =
+            "https://api.pharmgkb.org/v1/site/labelsByDrug";
+
+    public static final String URL_DRUG_LABEL =
+            "https://api.pharmgkb.org/v1/data/label?source=fda";
+
+    public static final String URL_DRUG_LABEL_DETAIL =
+            "https://api.pharmgkb.org/v1/data/label/%s?view=base";
 
     private DrugDao drugDao = new DrugDao();
     private DrugLabelDao drugLabelDao = new DrugLabelDao();
 
     public void doCrawlerDrug() {
-        String content = this.getURLContent(URL_DRUG_LABEL);
+        String content = this.getURLContent(URL_DRUG_BY_LABEL);
+
+        if (content == null || content.isBlank()) {
+            log.info("Failed to fetch drug list.");
+            return;
+        }
+
         Gson gson = new Gson();
         Map drugLabels = gson.fromJson(content, Map.class);
-        List<Map> data = (List<Map>) drugLabels.get("data");
+        List data = (List) drugLabels.get("data");
+
+        if (data == null) {
+            log.info("No drug data found.");
+            return;
+        }
+
         data.stream().forEach(x -> {
-            log.info("{}", x);
-            Map drug = ((Map) x.get("drug"));
-            String id = (String) drug.get("id");
-            String name = (String) drug.get("name");
-            String objCls = (String) drug.get("objCls");
-            String drugUrl = (String) x.get("drugUrl");
-            boolean biomarker = ((Boolean) x.get("biomarker"));
+            Map row = (Map) x;
+            Map drug = (Map) row.get("drug");
+
+            if (drug == null) {
+                return;
+            }
+
+            String id = asString(drug.get("id"));
+            String name = asString(drug.get("name"));
+            String objCls = asString(drug.get("objCls"));
+            String drugUrl = asString(row.get("drugUrl"));
+            boolean biomarker = asBoolean(row.get("biomarker"));
+
             Drug drugBean = new Drug(id, name, biomarker, drugUrl, objCls);
 
-            drugDao.saveDrug(drugBean);
-        });
-    }
-
-    public void doCrawlerDrugLabel() {
-
-        DBUtils.execSQL(connection -> {
-            try {
-                PreparedStatement preparedStatement = connection.prepareStatement("select * from drug");
-                ResultSet resultSet = preparedStatement.executeQuery();
-                while (resultSet.next()) {
-                    String id = resultSet.getString("id");
-                    String content = this.getURLContent(String.format(URL_DRUG_LABEL_DETAIL, id));
-                    Gson gson = new Gson();
-                    Map result = gson.fromJson(content, Map.class);
-                    Map data = (Map) result.get("data");
-                    List<Map> drugLabels = (List<Map>) data.get("drugLabels");
-                    log.info("Fetch label of drug {}", id);
-                    drugLabels.stream().forEach(x -> {
-                        log.info("Going to save label: {}", (String) x.get("id"));
-                        String labelId = (String) x.get("id");
-                        String name = (String) x.get("id");
-                        String objCls = (String) x.get("objCls");
-                        boolean alternateDrugAvailable = (Boolean) x.get("alternateDrugAvailable");
-                        boolean dosingInformation = (Boolean) x.get("dosingInformation");
-                        String prescribingMarkdown = "";
-                        if (x.containsKey("prescribingMarkdown")) {
-                            prescribingMarkdown = ((String) ((Map) x.get("prescribingMarkdown")).get("html"));
-                        }
-                        String source = (String) x.get("source");
-                        String textMarkdown = ((String) ((Map) x.get("textMarkdown")).get("html"));
-                        String summaryMarkdown = ((String) ((Map) x.get("summaryMarkdown")).get("html"));
-                        String raw = gson.toJson(x);
-                        String drugId = ((String) ((List<Map>) x.get("relatedChemicals")).get(0).get("id"));
-                        DrugLabel drugLabelBean = new DrugLabel(labelId, name, objCls, alternateDrugAvailable, dosingInformation
-                                , prescribingMarkdown, source, textMarkdown, summaryMarkdown, raw, drugId);
-                        if (!drugLabelDao.existsById(labelId)) {
-                            drugLabelDao.saveDrugLabel(drugLabelBean);
-                            log.info("Saved: {}", labelId);
-                        } else {
-                            log.info("Label {} already exist, skip", labelId);
-                        }
-                    });
-                }
-            } catch (SQLException e) {
-                log.info("", e);
+            if (!drugDao.existsById(id)) {
+                drugDao.saveDrug(drugBean);
+                log.info("Saved drug: {}", id);
+            } else {
+                log.info("Drug {} already exists, skip", id);
             }
         });
     }
 
+    public void doCrawlerDrugLabel() {
+        String content = this.getURLContent(URL_DRUG_LABEL);
+
+        if (content == null || content.isBlank()) {
+            log.info("Failed to fetch drug label list.");
+            return;
+        }
+
+        Gson gson = new Gson();
+        Map result = gson.fromJson(content, Map.class);
+        List data = (List) result.get("data");
+
+        if (data == null) {
+            log.info("No drug label data found.");
+            return;
+        }
+
+        data.stream().forEach(x -> {
+            Map labelSummary = (Map) x;
+            String labelId = asString(labelSummary.get("id"));
+
+            if (labelId == null || labelId.isBlank()) {
+                return;
+            }
+
+            String detailContent = this.getURLContent(String.format(URL_DRUG_LABEL_DETAIL, labelId));
+
+            if (detailContent == null || detailContent.isBlank()) {
+                log.info("Failed to fetch label detail: {}", labelId);
+                return;
+            }
+
+            Map detailResult = gson.fromJson(detailContent, Map.class);
+            Map label = (Map) detailResult.get("data");
+
+            if (label == null) {
+                log.info("No detail data for label: {}", labelId);
+                return;
+            }
+
+            DrugLabel drugLabelBean = buildDrugLabel(label, gson);
+
+            if (!drugLabelDao.existsById(drugLabelBean.getId())) {
+                drugLabelDao.saveDrugLabel(drugLabelBean);
+                log.info("Saved drug label: {}", drugLabelBean.getId());
+            } else {
+                drugLabelDao.updateExtendedFields(drugLabelBean);
+                log.info("Updated extended fields for drug label: {}", drugLabelBean.getId());
+            }
+        });
+    }
+
+    private DrugLabel buildDrugLabel(Map label, Gson gson) {
+        String id = asString(label.get("id"));
+        String name = asString(label.get("name"));
+
+        if (name == null || name.isBlank()) {
+            name = id;
+        }
+
+        String objCls = asString(label.get("objCls"));
+        boolean alternateDrugAvailable = asBoolean(label.get("alternateDrugAvailable"));
+        boolean dosingInformation = asBoolean(label.get("dosingInformation"));
+
+        String prescribingMarkdown = getMarkdownHtml(label, "prescribingMarkdown");
+        String source = asString(label.get("source"));
+        String textMarkdown = getMarkdownHtml(label, "textMarkdown");
+        String summaryMarkdown = getMarkdownHtml(label, "summaryMarkdown");
+        String raw = gson.toJson(label);
+        String drugId = getFirstRelatedChemicalId(label);
+
+        String summaryText = getMarkdownText(label, "summaryMarkdown");
+        String prescribingText = getMarkdownText(label, "prescribingMarkdown");
+        String labelText = getMarkdownText(label, "textMarkdown");
+
+        String efficacySummary = firstNonBlank(summaryText, labelText);
+        String responseWarning = buildResponseWarning(prescribingText, labelText, summaryText);
+        String alternativeDrug = buildAlternativeDrug(
+                alternateDrugAvailable,
+                prescribingText,
+                summaryText,
+                labelText
+        );
+
+        return new DrugLabel(
+                id,
+                name,
+                objCls,
+                alternateDrugAvailable,
+                dosingInformation,
+                prescribingMarkdown,
+                source,
+                textMarkdown,
+                summaryMarkdown,
+                efficacySummary,
+                responseWarning,
+                alternativeDrug,
+                raw,
+                drugId
+        );
+    }
+
+    private String buildResponseWarning(String prescribingText, String labelText, String summaryText) {
+        String warningText = firstMatchingSentence(
+                prescribingText,
+                "warning",
+                "boxed warning",
+                "poor metabolizers",
+                "poor metabolisers",
+                "reduced effect",
+                "diminished",
+                "risk",
+                "avoid",
+                "consider"
+        );
+
+        if (warningText != null) {
+            return warningText;
+        }
+
+        warningText = firstMatchingSentence(
+                labelText,
+                "warning",
+                "boxed warning",
+                "poor metabolizers",
+                "poor metabolisers",
+                "reduced effect",
+                "diminished",
+                "risk",
+                "avoid",
+                "consider"
+        );
+
+        if (warningText != null) {
+            return warningText;
+        }
+
+        return firstMatchingSentence(
+                summaryText,
+                "warning",
+                "poor metabolizers",
+                "poor metabolisers",
+                "reduced effect",
+                "diminished",
+                "risk",
+                "avoid",
+                "consider"
+        );
+    }
+
+    private String buildAlternativeDrug(boolean alternateDrugAvailable,
+                                        String prescribingText,
+                                        String summaryText,
+                                        String labelText) {
+        if (!alternateDrugAvailable) {
+            return null;
+        }
+
+        String alternativeText = firstMatchingSentence(
+                prescribingText,
+                "another",
+                "alternative",
+                "different",
+                "consider",
+                "avoid"
+        );
+
+        if (alternativeText != null) {
+            return alternativeText;
+        }
+
+        alternativeText = firstMatchingSentence(
+                summaryText,
+                "another",
+                "alternative",
+                "different",
+                "consider",
+                "avoid"
+        );
+
+        if (alternativeText != null) {
+            return alternativeText;
+        }
+
+        return firstMatchingSentence(
+                labelText,
+                "another",
+                "alternative",
+                "different",
+                "consider",
+                "avoid"
+        );
+    }
+
+    private String getMarkdownHtml(Map label, String key) {
+        Object markdown = label.get(key);
+
+        if (!(markdown instanceof Map)) {
+            return "";
+        }
+
+        Object html = ((Map) markdown).get("html");
+
+        if (!(html instanceof String)) {
+            return "";
+        }
+
+        return (String) html;
+    }
+
+    private String getMarkdownText(Map label, String key) {
+        String html = getMarkdownHtml(label, key);
+
+        if (html == null || html.isBlank()) {
+            return null;
+        }
+
+        return normalizeText(html);
+    }
+
+    private String normalizeText(String html) {
+        String text = html
+                .replace("<br>", " ")
+                .replace("<br/>", " ")
+                .replace("<br />", " ")
+                .replace("&nbsp;", " ")
+                .replace("&quot;", "\"")
+                .replace("&#39;", "'")
+                .replace("&apos;", "'")
+                .replace("&amp;", "&");
+
+        text = HTML_TAG_PATTERN.matcher(text).replaceAll(" ");
+        text = WHITESPACE_PATTERN.matcher(text).replaceAll(" ").trim();
+
+        return text.isEmpty() ? null : text;
+    }
+
+    private String firstMatchingSentence(String text, String... keywords) {
+        if (text == null || text.isBlank()) {
+            return null;
+        }
+
+        String[] sentences = text.split("(?<=[.!?])\\s+");
+
+        for (String sentence : sentences) {
+            String lowerCaseSentence = sentence.toLowerCase();
+
+            for (String keyword : keywords) {
+                if (lowerCaseSentence.contains(keyword.toLowerCase())) {
+                    return sentence.trim();
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private String firstNonBlank(String... candidates) {
+        for (String candidate : candidates) {
+            if (candidate != null && !candidate.isBlank()) {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    private String getFirstRelatedChemicalId(Map label) {
+        Object relatedChemicalsObj = label.get("relatedChemicals");
+
+        if (!(relatedChemicalsObj instanceof List)) {
+            return null;
+        }
+
+        List relatedChemicals = (List) relatedChemicalsObj;
+
+        if (relatedChemicals.isEmpty()) {
+            return null;
+        }
+
+        Object first = relatedChemicals.get(0);
+
+        if (!(first instanceof Map)) {
+            return null;
+        }
+
+        return asString(((Map) first).get("id"));
+    }
+
+    private String asString(Object value) {
+        return value == null ? null : String.valueOf(value);
+    }
+
+    private boolean asBoolean(Object value) {
+        return value instanceof Boolean && (Boolean) value;
+    }
 }

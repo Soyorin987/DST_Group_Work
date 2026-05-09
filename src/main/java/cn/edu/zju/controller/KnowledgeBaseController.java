@@ -65,7 +65,17 @@ public class KnowledgeBaseController {
     public void drugLabels(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        List<DrugLabel> drugLabels = drugLabelDao.findAll();
+        String keyword = trim(request.getParameter("keyword"));
+
+        List<DrugLabel> drugLabels;
+
+        if (!keyword.isEmpty()) {
+            drugLabels = drugLabelDao.findByKeyword(keyword);
+        } else {
+            drugLabels = drugLabelDao.findAll();
+        }
+
+        request.setAttribute("keyword", keyword);
         request.setAttribute("drugLabels", drugLabels);
         request.getRequestDispatcher("/views/drug_labels.jsp").forward(request, response);
     }
@@ -76,5 +86,9 @@ public class KnowledgeBaseController {
         List<DosingGuideline> dosingGuidelines = dosingGuidelineDao.findAll();
         request.setAttribute("dosingGuidelines", dosingGuidelines);
         request.getRequestDispatcher("/views/dosing_guideline.jsp").forward(request, response);
+    }
+
+    private String trim(String value) {
+        return value == null ? "" : value.trim();
     }
 }
