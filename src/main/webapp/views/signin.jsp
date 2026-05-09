@@ -76,6 +76,18 @@
             border: none;
         }
         .form-group + .form-group { margin-top: 14px; }
+
+        .signin-button-row {
+            margin-top: 18px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .signin-button-row .btn {
+            min-width: 120px;
+            padding-left: 24px;
+            padding-right: 24px;
+        }
         .helper-row {
             display: flex;
             justify-content: space-between;
@@ -106,8 +118,7 @@
             <div class="alert alert-danger" role="alert">${error}</div>
         </c:if>
 
-        <form method="post" action="${pageContext.request.contextPath}/login" class="mt-2">
-            <div class="form-group">
+        <form method="post" action="<%= request.getContextPath() %>/login" class="mt-2">            <div class="form-group">
                 <label class="sr-only">Username</label>
                 <input name="username" class="form-control" required autofocus placeholder="Username"/>
             </div>
@@ -116,14 +127,14 @@
                 <input name="password" type="password" class="form-control" required placeholder="Password"/>
             </div>
 
-            <div class="form-group" style="margin-top:14px;">
-                <button class="btn btn-primary btn-block w-100" type="submit">Sign in</button>
+            <div class="signin-button-row">
+                <button class="btn btn-primary" type="submit">Sign in</button>
             </div>
 
             <div class="helper-row">
-                <div class="small-link">New? <a href="${pageContext.request.contextPath}/views/register.jsp">Registration</a></div>
-                <div><a href="#" class="text-muted">Forgot?</a></div>
-            </div>
+                <div class="small-link">
+                    New? <a href="<%= request.getContextPath() %>/views/register.jsp">Registration</a>
+                </div>
         </form>
     </div>
 </div>
