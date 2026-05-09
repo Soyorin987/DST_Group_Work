@@ -31,6 +31,15 @@ public class UserDao {
     }
 
     private Connection getConn() throws SQLException {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            throw new SQLException(
+                    "MySQL JDBC driver not found. Please check whether mysql-connector-java is included in WEB-INF/lib.",
+                    e
+            );
+        }
+
         return DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword);
     }
 

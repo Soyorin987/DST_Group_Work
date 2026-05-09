@@ -1,141 +1,216 @@
-<!-- html -->
+<%@ page contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
-<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta charset="UTF-8">
     <title>Sign In</title>
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/bootstrap/css/bootstrap.min.css">
-    <link rel="stylesheet" href="${pageContext.request.contextPath}/static/css/app.css">
+
     <style>
-        :root {
-            --bg: #f5f8fb;
-            --card-bg: #eaf4ff; /* 淡蓝色卡片背景 */
-            --card-gradient: linear-gradient(180deg,#f7fbff,#eaf4ff);
-            --accent: #0d6efd;
-            --muted: #6c757d;
-            --radius: 14px;
-            --maxw: 560px;
-            --base-font: 18px;
+        * {
+            box-sizing: border-box;
         }
-        html, body {
-            height: 100%;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-            font-size: var(--base-font);
-            background: var(--bg);
-            color: #222;
+
+        body {
             margin: 0;
-        }
-        /* 使用视口高度保证垂直居中 */
-        .page-wrap {
             min-height: 100vh;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #f4f7fb;
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 24px;
+            color: #1f2937;
         }
-        .signin-card {
-            width: 100%;
-            max-width: var(--maxw);
-            background: var(--card-gradient);
-            border-radius: var(--radius);
-            box-shadow: 0 12px 40px rgba(12,20,40,0.08);
-            padding: 34px 40px;
-            border: 1px solid rgba(13,54,92,0.06);
-        }
-        .signin-header {
-            text-align: center;
-            margin-bottom: 18px;
-        }
-        .signin-header h2 {
-            margin: 0;
-            font-size: 2rem;
-            font-weight: 600;
-            color: #0b1220;
-        }
-        .lead {
-            color: var(--muted);
-            font-size: 1rem;
-            margin-top: 8px;
-        }
-        .form-control {
-            font-size: 1rem;
-            padding: 0.95rem 1rem;
-            border-radius: 10px;
-            border: 1px solid rgba(0,0,0,0.12);
-            background: rgba(255,255,255,0.9);
-        }
-        .btn-primary {
-            font-size: 1rem;
-            padding: 0.75rem;
-            border-radius: 10px;
-            box-shadow: none;
-            background-image: linear-gradient(180deg, var(--accent), #084dbb);
-            border: none;
-        }
-        .form-group + .form-group { margin-top: 14px; }
 
-        .signin-button-row {
-            margin-top: 18px;
+        .signin-card {
+            width: 760px;
+            max-width: 90%;
+            background: linear-gradient(180deg, #f7fbff, #eaf4ff);
+            border-radius: 16px;
+            padding: 48px 64px;
+            box-shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
+            border: 1px solid rgba(15, 23, 42, 0.06);
+        }
+
+        .signin-title {
+            margin: 0;
+            text-align: center;
+            font-size: 42px;
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+
+        .signin-subtitle {
+            margin-top: 12px;
+            margin-bottom: 32px;
+            text-align: center;
+            font-size: 18px;
+            color: #6b7280;
+        }
+
+        .form-area {
+            max-width: 470px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 17px;
+            font-weight: 600;
+            color: #374151;
+        }
+
+        .form-group input {
+            width: 100%;
+            height: 48px;
+            padding: 0 16px;
+            border: 1px solid #d1d5db;
+            border-radius: 10px;
+            font-size: 16px;
+            background: #f9fafb;
+            outline: none;
+            transition: border-color 0.2s, box-shadow 0.2s, background 0.2s;
+        }
+
+        .form-group input:focus {
+            border-color: #2563eb;
+            background: #ffffff;
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        }
+
+        .message-success {
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            background: #dcfce7;
+            color: #166534;
+            font-size: 14px;
+        }
+
+        .message-error {
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border-radius: 8px;
+            background: #fee2e2;
+            color: #b91c1c;
+            font-size: 14px;
+        }
+
+        .button-row {
+            margin-top: 26px;
             display: flex;
             justify-content: center;
         }
 
-        .signin-button-row .btn {
-            min-width: 120px;
-            padding-left: 24px;
-            padding-right: 24px;
+        .signin-button {
+            min-width: 160px;
+            height: 48px;
+            border: none;
+            border-radius: 10px;
+            background: #2563eb;
+            color: #ffffff;
+            font-size: 17px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
         }
+
+        .signin-button:hover {
+            background: #1d4ed8;
+        }
+
+        .signin-button:active {
+            transform: translateY(1px);
+        }
+
         .helper-row {
+            margin-top: 28px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-top: 14px;
-            font-size: 0.95rem;
+            font-size: 16px;
+            color: #6b7280;
         }
-        .helper-row a { color: var(--accent); text-decoration: none; }
-        .small-link { color: var(--muted); font-size: 0.95rem; }
-        @media (max-width: 576px) {
-            :root { --base-font: 16px; }
-            .signin-card { padding: 20px; border-radius: 12px; }
+
+        .helper-row a {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .helper-row a:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 600px) {
+            .signin-card {
+                padding: 36px 28px;
+            }
+
+            .signin-title {
+                font-size: 34px;
+            }
+
+            .helper-row {
+                flex-direction: column;
+                gap: 12px;
+            }
         }
     </style>
 </head>
+
 <body>
-<div class="page-wrap">
-    <div class="signin-card">
-        <div class="signin-header">
-            <h2>Sign In</h2>
-            <div class="lead">Welcome back — please sign in to continue</div>
-        </div>
+<div class="signin-card">
+    <h2 class="signin-title">Sign In</h2>
+    <p class="signin-subtitle">Welcome back — please sign in to continue</p>
+
+    <div class="form-area">
 
         <c:if test="${not empty param.registered}">
-            <div class="alert alert-success" role="alert">Registration successful. Please sign in.</div>
+            <div class="message-success">
+                Registration successful. Please sign in.
+            </div>
         </c:if>
+
         <c:if test="${not empty error}">
-            <div class="alert alert-danger" role="alert">${error}</div>
+            <div class="message-error">
+                    ${error}
+            </div>
         </c:if>
 
-        <form method="post" action="<%= request.getContextPath() %>/login" class="mt-2">            <div class="form-group">
-                <label class="sr-only">Username</label>
-                <input name="username" class="form-control" required autofocus placeholder="Username"/>
-            </div>
+        <form method="post" action="<%= request.getContextPath() %>/login">
             <div class="form-group">
-                <label class="sr-only">Password</label>
-                <input name="password" type="password" class="form-control" required placeholder="Password"/>
+                <label for="username">Username</label>
+                <input id="username" name="username" required autofocus />
             </div>
 
-            <div class="signin-button-row">
-                <button class="btn btn-primary" type="submit">Sign in</button>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input id="password" name="password" type="password" required />
+            </div>
+
+            <div class="button-row">
+                <button class="signin-button" type="submit">Sign in</button>
             </div>
 
             <div class="helper-row">
-                <div class="small-link">
-                    New? <a href="<%= request.getContextPath() %>/views/register.jsp">Registration</a>
+                <div>
+                    New?
+                    <a href="<%= request.getContextPath() %>/register">Registration</a>
                 </div>
+
+                <div>
+                    <a href="#">Forgot?</a>
+                </div>
+            </div>
         </form>
+
     </div>
 </div>
 </body>

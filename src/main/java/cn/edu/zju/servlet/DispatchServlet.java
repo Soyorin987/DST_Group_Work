@@ -69,8 +69,9 @@ public class DispatchServlet extends HttpServlet {
     protected void service(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        String pathInfo = getPathInfo(req);
-        log.info("{}: {}", req.getMethod(), pathInfo);
+        String path = getPathInfo(req);
+        log.info("{}: {}", req.getMethod(), path);
+
         super.service(req, resp);
     }
 
@@ -78,9 +79,9 @@ public class DispatchServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        String pathInfo = getPathInfo(req);
+        String path = getPathInfo(req);
         HttpConsumer<HttpServletRequest, HttpServletResponse> consumer =
-                getRequestMapping.getOrDefault(pathInfo, notFound);
+                getRequestMapping.getOrDefault(path, notFound);
 
         consumer.accept(req, resp);
     }
@@ -89,14 +90,14 @@ public class DispatchServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        String pathInfo = getPathInfo(req);
+        String path = getPathInfo(req);
         HttpConsumer<HttpServletRequest, HttpServletResponse> consumer =
-                postRequestMapping.getOrDefault(pathInfo, notFound);
+                postRequestMapping.getOrDefault(path, notFound);
 
         consumer.accept(req, resp);
     }
 
-    private static String getPathInfo(HttpServletRequest req) {
+    private String getPathInfo(HttpServletRequest req) {
         String pathInfo = req.getPathInfo();
 
         if (pathInfo == null || pathInfo.trim().isEmpty()) {

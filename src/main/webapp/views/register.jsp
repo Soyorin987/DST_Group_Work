@@ -24,7 +24,7 @@
         }
 
         .register-card {
-            width: 480px;
+            width: 620px;
             max-width: 90%;
             background: #ffffff;
             border-radius: 16px;
@@ -35,7 +35,7 @@
         .register-title {
             margin: 0;
             text-align: center;
-            font-size: 36px;
+            font-size: 42px;
             font-weight: 700;
             letter-spacing: 1px;
         }
@@ -44,26 +44,26 @@
             margin-top: 10px;
             margin-bottom: 30px;
             text-align: center;
-            font-size: 16px;
+            font-size: 18px;
             color: #6b7280;
         }
 
         .form-group {
-            margin-bottom: 18px;
+            margin-bottom: 20px;
         }
 
         .form-group label {
             display: block;
             margin-bottom: 8px;
-            font-size: 15px;
+            font-size: 17px;
             font-weight: 600;
             color: #374151;
         }
 
         .form-group input {
             width: 100%;
-            height: 44px;
-            padding: 0 14px;
+            height: 48px;
+            padding: 0 16px;
             border: 1px solid #d1d5db;
             border-radius: 10px;
             font-size: 16px;
@@ -78,9 +78,9 @@
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
         }
 
-        .error-message {
+        .message-error {
             margin-bottom: 18px;
-            padding: 10px 12px;
+            padding: 12px 14px;
             border-radius: 8px;
             background: #fee2e2;
             color: #b91c1c;
@@ -88,19 +88,19 @@
         }
 
         .button-row {
-            margin-top: 24px;
+            margin-top: 26px;
             display: flex;
             justify-content: center;
         }
 
         .register-button {
-            min-width: 140px;
-            height: 44px;
+            min-width: 160px;
+            height: 48px;
             border: none;
             border-radius: 10px;
             background: #2563eb;
             color: #ffffff;
-            font-size: 16px;
+            font-size: 17px;
             font-weight: 600;
             cursor: pointer;
             transition: background 0.2s, transform 0.1s;
@@ -115,9 +115,9 @@
         }
 
         .login-link-row {
-            margin-top: 22px;
+            margin-top: 24px;
             text-align: center;
-            font-size: 15px;
+            font-size: 16px;
             color: #6b7280;
         }
 
@@ -139,7 +139,9 @@
     <p class="register-subtitle">Create your account to continue</p>
 
     <c:if test="${not empty error}">
-        <div class="error-message">${error}</div>
+        <div class="message-error">
+                ${error}
+        </div>
     </c:if>
 
     <form method="post" action="<%= request.getContextPath() %>/register">
@@ -164,7 +166,7 @@
 
         <div class="login-link-row">
             Already have an account?
-            <a href="<%= request.getContextPath() %>/views/signin.jsp">Back to Login</a>
+            <a href="<%= request.getContextPath() %>/login">Back to Login</a>
         </div>
     </form>
 </div>
