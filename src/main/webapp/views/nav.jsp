@@ -14,6 +14,20 @@
 
 <nav class="col-md-2 d-none d-md-block bg-light sidebar">
     <div class="sidebar-sticky">
+        <!-- html -->
+        <!-- Insert into `src/main/webapp/views/nav.jsp` right after <div class="sidebar-sticky"> -->
+        <div class="sidebar-top" style="padding:16px;">
+            <c:choose>
+                <c:when test="${empty sessionScope.user}">
+                    <a class="btn btn-primary btn-block" href="${pageContext.request.contextPath}/views/signin.jsp">Log in</a>
+                </c:when>
+                <c:otherwise>
+                    <div style="margin-bottom:8px;">Welcome, ${sessionScope.user}</div>
+                    <a class="btn btn-outline-secondary btn-block" href="${pageContext.request.contextPath}/logout">Logout</a>
+                </c:otherwise>
+            </c:choose>
+        </div>
+
         <ul class="nav flex-column">
             <li class="nav-item">
                 <a class="nav-link ${activeMenu == 'dashboard' ? 'active' : ''}" href="<%=request.getContextPath()%>/">
