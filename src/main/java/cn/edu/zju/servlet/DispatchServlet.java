@@ -26,7 +26,7 @@ public class DispatchServlet extends HttpServlet {
         try {
             response.setStatus(HttpServletResponse.SC_NOT_FOUND);
             response.setContentType("text/plain;charset=UTF-8");
-            response.getWriter().write("Not Found");
+            response.getWriter().write("Not Found: " + getPathInfo(request));
         } catch (IOException e) {
             log.info("", e);
         }
@@ -69,7 +69,7 @@ public class DispatchServlet extends HttpServlet {
     protected void service(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        String pathInfo = req.getPathInfo();
+        String pathInfo = getPathInfo(req);
         log.info("{}: {}", req.getMethod(), pathInfo);
         super.service(req, resp);
     }
@@ -96,10 +96,14 @@ public class DispatchServlet extends HttpServlet {
         consumer.accept(req, resp);
     }
 
-    private String getPathInfo(HttpServletRequest req) {
+    private static String getPathInfo(HttpServletRequest req) {
         String pathInfo = req.getPathInfo();
 
-        if (pathInfo == null) {
+        if (pathInfo == null || pathInfo.trim().isEmpty()) {
+            pathInfo = req.getServletPath();
+        }
+
+        if (pathInfo == null || pathInfo.trim().isEmpty()) {
             pathInfo = "/";
         }
 
