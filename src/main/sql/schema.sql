@@ -222,7 +222,7 @@ CREATE TABLE favorites (
                            id BIGINT AUTO_INCREMENT PRIMARY KEY,
                            user_id BIGINT NOT NULL,
                            resource_type VARCHAR(64) NOT NULL,
-                           resource_id BIGINT NOT NULL,
+                           resource_id VARCHAR(100) NOT NULL,
                            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                            UNIQUE KEY uq_user_resource (user_id, resource_type, resource_id),
                            INDEX idx_user (user_id)

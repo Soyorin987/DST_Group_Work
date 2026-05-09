@@ -121,7 +121,7 @@ public class FavoriteDao {
         String sql =
                 "SELECT d.id, d.name, d.obj_cls, d.drug_url, d.biomarker " +
                         "FROM favorites f " +
-                        "JOIN drug d ON f.resource_id = d.id " +
+                        "JOIN drug d ON TRIM(f.resource_id) = TRIM(d.id) " +
                         "WHERE f.user_id = ? AND f.resource_type = 'drug' " +
                         "ORDER BY f.created_at DESC";
 
@@ -141,6 +141,7 @@ public class FavoriteDao {
                             rs.getString("drug_url"),
                             rs.getString("obj_cls")
                     );
+
                     drug.setFavorited(true);
                     drugs.add(drug);
                 }
