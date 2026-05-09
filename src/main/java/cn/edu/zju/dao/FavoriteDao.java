@@ -1,85 +1,152 @@
 package cn.edu.zju.dao;
 
+import cn.edu.zju.bean.Drug;
 import cn.edu.zju.bean.Favorite;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
 
 public class FavoriteDao {
-    private String jdbcUrl;
-    private String jdbcUser;
-    private String jdbcPassword;
+    private final String jdbcUrl;
+    private final String jdbcUser;
+    private final String jdbcPassword;
 
     public FavoriteDao() {
-        try {
+        try (InputStream in = getClass().getClassLoader().getResourceAsStream("app.properties")) {
+            if (in == null) {
+                throw new RuntimeException("Cannot find app.properties in classpath.");
+            }
+
             Properties p = new Properties();
-            p.load(getClass().getClassLoader().getResourceAsStream("app.properties"));
+            p.load(new InputStreamReader(in, StandardCharsets.UTF_8));
+
             jdbcUrl = p.getProperty("jdbc.url");
             jdbcUser = p.getProperty("jdbc.username");
             jdbcPassword = p.getProperty("jdbc.password");
+
+            if (jdbcUrl == null || jdbcUser == null) {
+                throw new RuntimeException("Database configuration is incomplete.");
+            }
+
         } catch (Exception e) {
-            throw new RuntimeException("加载数据库配置失败", e);
+            throw new RuntimeException("Failed to load database configuration.", e);
         }
     }
 
     private Connection getConn() throws SQLException {
+        try {
+            Class.forName("com.mysql.cj.jdbc.Driver");
+        } catch (ClassNotFoundException e) {
+            throw new SQLException("MySQL JDBC driver not found. Please check WEB-INF/lib.", e);
+        }
+
         return DriverManager.getConnection(jdbcUrl, jdbcUser, jdbcPassword);
     }
 
     public void save(Favorite f) throws SQLException {
-        String sql = "INSERT INTO favorites (user_id, resource_type, resource_id) VALUES (?, ?, ?)";
-        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+        String sql = "INSERT IGNORE INTO favorites (user_id, resource_type, resource_id) VALUES (?, ?, ?)";
+
+        try (Connection c = getConn();
+             PreparedStatement ps = c.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+
             ps.setLong(1, f.getUserId());
             ps.setString(2, f.getResourceType());
-            ps.setLong(3, f.getResourceId());
+            ps.setString(3, f.getResourceId());
             ps.executeUpdate();
+
             try (ResultSet rs = ps.getGeneratedKeys()) {
-                if (rs.next()) f.setId(rs.getLong(1));
+                if (rs.next()) {
+                    f.setId(rs.getLong(1));
+                }
             }
         }
     }
 
-    public boolean exists(long userId, String resourceType, long resourceId) throws SQLException {
-        String sql = "SELECT 1 FROM favorites WHERE user_id=? AND resource_type=? AND resource_id=? LIMIT 1";
-        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
+    public boolean exists(long userId, String resourceType, String resourceId) throws SQLException {
+        String sql = "SELECT 1 FROM favorites WHERE user_id = ? AND resource_type = ? AND resource_id = ? LIMIT 1";
+
+        try (Connection c = getConn();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
             ps.setLong(1, userId);
             ps.setString(2, resourceType);
-            ps.setLong(3, resourceId);
+            ps.setString(3, resourceId);
+
             try (ResultSet rs = ps.executeQuery()) {
                 return rs.next();
             }
         }
     }
 
-    public void deleteByUserAndResource(long userId, String resourceType, long resourceId) throws SQLException {
-        String sql = "DELETE FROM favorites WHERE user_id=? AND resource_type=? AND resource_id=?";
-        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
+    public void deleteByUserAndResource(long userId, String resourceType, String resourceId) throws SQLException {
+        String sql = "DELETE FROM favorites WHERE user_id = ? AND resource_type = ? AND resource_id = ?";
+
+        try (Connection c = getConn();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
             ps.setLong(1, userId);
             ps.setString(2, resourceType);
-            ps.setLong(3, resourceId);
+            ps.setString(3, resourceId);
             ps.executeUpdate();
         }
     }
 
-    public List<Favorite> findByUserId(long userId) throws SQLException {
-        String sql = "SELECT id, user_id, resource_type, resource_id, created_at FROM favorites WHERE user_id=? ORDER BY created_at DESC";
-        List<Favorite> list = new ArrayList<>();
-        try (Connection c = getConn(); PreparedStatement ps = c.prepareStatement(sql)) {
+    public List<String> findFavoriteResourceIds(long userId, String resourceType) throws SQLException {
+        String sql = "SELECT resource_id FROM favorites WHERE user_id = ? AND resource_type = ?";
+
+        List<String> ids = new ArrayList<>();
+
+        try (Connection c = getConn();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
             ps.setLong(1, userId);
+            ps.setString(2, resourceType);
+
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
-                    Favorite f = new Favorite();
-                    f.setId(rs.getLong("id"));
-                    f.setUserId(rs.getLong("user_id"));
-                    f.setResourceType(rs.getString("resource_type"));
-                    f.setResourceId(rs.getLong("resource_id"));
-                    f.setCreatedAt(rs.getTimestamp("created_at"));
-                    list.add(f);
+                    ids.add(rs.getString("resource_id"));
                 }
             }
         }
-        return list;
+
+        return ids;
+    }
+
+    public List<Drug> findFavoriteDrugsByUserId(long userId) throws SQLException {
+        String sql =
+                "SELECT d.id, d.name, d.obj_cls, d.drug_url, d.biomarker " +
+                        "FROM favorites f " +
+                        "JOIN drug d ON f.resource_id = d.id " +
+                        "WHERE f.user_id = ? AND f.resource_type = 'drug' " +
+                        "ORDER BY f.created_at DESC";
+
+        List<Drug> drugs = new ArrayList<>();
+
+        try (Connection c = getConn();
+             PreparedStatement ps = c.prepareStatement(sql)) {
+
+            ps.setLong(1, userId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    Drug drug = new Drug(
+                            rs.getString("id"),
+                            rs.getString("name"),
+                            rs.getBoolean("biomarker"),
+                            rs.getString("drug_url"),
+                            rs.getString("obj_cls")
+                    );
+                    drug.setFavorited(true);
+                    drugs.add(drug);
+                }
+            }
+        }
+
+        return drugs;
     }
 }

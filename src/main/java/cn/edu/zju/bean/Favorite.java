@@ -6,10 +6,11 @@ public class Favorite {
     private Long id;
     private Long userId;
     private String resourceType;
-    private Long resourceId;
+    private String resourceId;
     private Timestamp createdAt;
 
-    public Favorite() {}
+    public Favorite() {
+    }
 
     public Long getId() {
         return id;
@@ -35,11 +36,11 @@ public class Favorite {
         this.resourceType = resourceType;
     }
 
-    public Long getResourceId() {
+    public String getResourceId() {
         return resourceId;
     }
 
-    public void setResourceId(Long resourceId) {
+    public void setResourceId(String resourceId) {
         this.resourceId = resourceId;
     }
 

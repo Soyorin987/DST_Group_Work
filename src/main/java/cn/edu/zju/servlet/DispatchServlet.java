@@ -1,6 +1,7 @@
 package cn.edu.zju.servlet;
 
 import cn.edu.zju.controller.AuthController;
+import cn.edu.zju.controller.FavoriteController;
 import cn.edu.zju.controller.IndexController;
 import cn.edu.zju.controller.KnowledgeBaseController;
 import cn.edu.zju.controller.MatchingController;
@@ -63,15 +64,17 @@ public class DispatchServlet extends HttpServlet {
 
         MatchingController matchingController = new MatchingController();
         matchingController.register(dispatcher);
+
+        FavoriteController favoriteController = new FavoriteController();
+        favoriteController.register(dispatcher);
     }
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        String path = getPathInfo(req);
-        log.info("{}: {}", req.getMethod(), path);
-
+        String pathInfo = getPathInfo(req);
+        log.info("{}: {}", req.getMethod(), pathInfo);
         super.service(req, resp);
     }
 
@@ -79,9 +82,9 @@ public class DispatchServlet extends HttpServlet {
     protected void doGet(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        String path = getPathInfo(req);
+        String pathInfo = getPathInfo(req);
         HttpConsumer<HttpServletRequest, HttpServletResponse> consumer =
-                getRequestMapping.getOrDefault(path, notFound);
+                getRequestMapping.getOrDefault(pathInfo, notFound);
 
         consumer.accept(req, resp);
     }
@@ -90,14 +93,14 @@ public class DispatchServlet extends HttpServlet {
     protected void doPost(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
-        String path = getPathInfo(req);
+        String pathInfo = getPathInfo(req);
         HttpConsumer<HttpServletRequest, HttpServletResponse> consumer =
-                postRequestMapping.getOrDefault(path, notFound);
+                postRequestMapping.getOrDefault(pathInfo, notFound);
 
         consumer.accept(req, resp);
     }
 
-    private String getPathInfo(HttpServletRequest req) {
+    private static String getPathInfo(HttpServletRequest req) {
         String pathInfo = req.getPathInfo();
 
         if (pathInfo == null || pathInfo.trim().isEmpty()) {
