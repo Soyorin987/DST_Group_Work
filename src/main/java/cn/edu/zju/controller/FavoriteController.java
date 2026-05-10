@@ -102,25 +102,33 @@ public class FavoriteController {
     public void listFavorites(HttpServletRequest req, HttpServletResponse resp)
             throws ServletException, IOException {
 
+        System.out.println("DEBUG ENTER FavoriteController.listFavorites()");
+
         User user = (User) req.getSession().getAttribute("user");
 
         if (user == null) {
+            System.out.println("DEBUG /favorites user is null");
             resp.sendRedirect(req.getContextPath() + "/login");
             return;
         }
 
         try {
-            List<Drug> favoriteDrugs = favoriteDao.findFavoriteDrugsByUserId(user.getId());
-
             System.out.println("DEBUG /favorites username = " + user.getUsername());
             System.out.println("DEBUG /favorites userId = " + user.getId());
+
+            List<Drug> favoriteDrugs = favoriteDao.findFavoriteDrugsByUserId(user.getId());
+
             System.out.println("DEBUG /favorites favoriteDrugs size = " + favoriteDrugs.size());
 
             req.setAttribute("drugs", favoriteDrugs);
+            req.setAttribute("favoriteDrugs", favoriteDrugs);
+
             req.getRequestDispatcher("/views/favorites.jsp").forward(req, resp);
 
         } catch (SQLException e) {
             log.error("Failed to list favorites", e);
+            System.out.println("DEBUG /favorites SQL error = " + e.getMessage());
+
             req.setAttribute("error", "Failed to load favorite drugs.");
             req.getRequestDispatcher("/views/favorites.jsp").forward(req, resp);
         }

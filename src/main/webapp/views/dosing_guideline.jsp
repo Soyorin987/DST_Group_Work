@@ -18,8 +18,13 @@
         }
 
         .summary-cell {
-            max-width: 800px;
+            max-width: 420px;
             white-space: normal;
+            line-height: 1.55;
+        }
+
+        .text-muted {
+            color: #6c757d;
         }
     </style>
 </head>
@@ -70,10 +75,10 @@
                 <table class="table table-striped table-sm">
                     <thead>
                     <tr>
-                        <th>#</th>
+                        <th>ID</th>
                         <th>Name</th>
                         <th>Recommendation</th>
-                        <th>Drug Id</th>
+                        <th>Drug ID</th>
                         <th>Source</th>
                         <th>Summary Markdown</th>
                     </tr>
@@ -87,7 +92,16 @@
                             <td>${item.recommendation}</td>
                             <td>${item.drugId}</td>
                             <td>${item.source}</td>
-                            <td class="summary-cell">${item.summaryMarkdown}</td>
+                            <td class="summary-cell">
+                                <c:choose>
+                                    <c:when test="${not empty item.summaryMarkdown}">
+                                        ${item.summaryMarkdown}
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="text-muted">Not available</span>
+                                    </c:otherwise>
+                                </c:choose>
+                            </td>
                         </tr>
                     </c:forEach>
                     </tbody>

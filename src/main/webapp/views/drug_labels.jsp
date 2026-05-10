@@ -20,11 +20,17 @@
         .summary-cell {
             max-width: 360px;
             white-space: normal;
+            line-height: 1.55;
         }
 
         .extended-cell {
-            max-width: 360px;
+            max-width: 380px;
             white-space: normal;
+            line-height: 1.55;
+        }
+
+        .text-muted {
+            color: #6c757d;
         }
     </style>
 </head>
@@ -56,7 +62,7 @@
                             type="text"
                             name="keyword"
                             class="form-control"
-                            placeholder="Search by label ID, source, summary, efficacy, warning, alternative drug or drug ID"
+                            placeholder="Search by label ID, source, summary, efficacy, warning or alternative drug"
                             value="${keyword}">
                     <div class="input-group-append">
                         <button class="btn btn-primary" type="submit">Search</button>
@@ -75,14 +81,13 @@
                 <table class="table table-striped table-sm">
                     <thead>
                     <tr>
-                        <th>#</th>
+                        <th>Label ID</th>
                         <th>Source</th>
                         <th>Dosing Information</th>
                         <th>Summary Markdown</th>
                         <th>Efficacy Summary</th>
                         <th>Response Warning</th>
                         <th>Alternative Drug</th>
-                        <th>Drug Id</th>
                     </tr>
                     </thead>
 
@@ -92,11 +97,50 @@
                             <td>${item.id}</td>
                             <td>${item.source}</td>
                             <td>${item.dosingInformation}</td>
-                            <td class="summary-cell">${item.summaryMarkdown}</td>
-                            <td class="extended-cell">${item.efficacySummary}</td>
-                            <td class="extended-cell">${item.responseWarning}</td>
-                            <td class="extended-cell">${item.alternativeDrug}</td>
-                            <td>${item.drugId}</td>
+
+                            <td class="summary-cell">
+                                <c:choose>
+                                    <c:when test="${not empty item.summaryMarkdown}">
+                                        ${item.summaryMarkdown}
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="text-muted">Not available</span>
+                                    </c:otherwise>
+                                </c:choose>
+                            </td>
+
+                            <td class="extended-cell">
+                                <c:choose>
+                                    <c:when test="${not empty item.efficacySummary}">
+                                        ${item.efficacySummary}
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="text-muted">Not available</span>
+                                    </c:otherwise>
+                                </c:choose>
+                            </td>
+
+                            <td class="extended-cell">
+                                <c:choose>
+                                    <c:when test="${not empty item.responseWarning}">
+                                        ${item.responseWarning}
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="text-muted">Not available</span>
+                                    </c:otherwise>
+                                </c:choose>
+                            </td>
+
+                            <td class="extended-cell">
+                                <c:choose>
+                                    <c:when test="${not empty item.alternativeDrug}">
+                                        ${item.alternativeDrug}
+                                    </c:when>
+                                    <c:otherwise>
+                                        <span class="text-muted">Not available</span>
+                                    </c:otherwise>
+                                </c:choose>
+                            </td>
                         </tr>
                     </c:forEach>
                     </tbody>

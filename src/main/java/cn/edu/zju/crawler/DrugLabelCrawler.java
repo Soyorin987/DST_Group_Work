@@ -13,14 +13,24 @@ import java.util.Map;
 import java.util.regex.Pattern;
 
 public class DrugLabelCrawler extends BaseCrawler {
+
     private static final Logger log = LoggerFactory.getLogger(DrugLabelCrawler.class);
 
     private static final Pattern HTML_TAG_PATTERN = Pattern.compile("<[^>]+>");
     private static final Pattern WHITESPACE_PATTERN = Pattern.compile("\\s+");
 
+    /*
+     * This URL is used to retrieve basic drug records.
+     * It is kept from the original project structure.
+     */
     public static final String URL_DRUG_BY_LABEL =
             "https://api.pharmgkb.org/v1/site/labelsByDrug";
 
+    /*
+     * These two URLs are kept consistent with Chen Xinrui's crawler.
+     * The first one retrieves FDA drug-label summaries.
+     * The second one retrieves detailed information for each specific drug label.
+     */
     public static final String URL_DRUG_LABEL =
             "https://api.pharmgkb.org/v1/data/label?source=fda";
 
@@ -33,7 +43,7 @@ public class DrugLabelCrawler extends BaseCrawler {
     public void doCrawlerDrug() {
         String content = this.getURLContent(URL_DRUG_BY_LABEL);
 
-        if (content == null || content.isBlank()) {
+        if (content == null || content.trim().isEmpty()) {
             log.info("Failed to fetch drug list.");
             return;
         }
@@ -75,7 +85,7 @@ public class DrugLabelCrawler extends BaseCrawler {
     public void doCrawlerDrugLabel() {
         String content = this.getURLContent(URL_DRUG_LABEL);
 
-        if (content == null || content.isBlank()) {
+        if (content == null || content.trim().isEmpty()) {
             log.info("Failed to fetch drug label list.");
             return;
         }
@@ -93,13 +103,14 @@ public class DrugLabelCrawler extends BaseCrawler {
             Map labelSummary = (Map) x;
             String labelId = asString(labelSummary.get("id"));
 
-            if (labelId == null || labelId.isBlank()) {
+            if (labelId == null || labelId.trim().isEmpty()) {
                 return;
             }
 
-            String detailContent = this.getURLContent(String.format(URL_DRUG_LABEL_DETAIL, labelId));
+            String detailUrl = String.format(URL_DRUG_LABEL_DETAIL, labelId);
+            String detailContent = this.getURLContent(detailUrl);
 
-            if (detailContent == null || detailContent.isBlank()) {
+            if (detailContent == null || detailContent.trim().isEmpty()) {
                 log.info("Failed to fetch label detail: {}", labelId);
                 return;
             }
@@ -126,9 +137,9 @@ public class DrugLabelCrawler extends BaseCrawler {
 
     private DrugLabel buildDrugLabel(Map label, Gson gson) {
         String id = asString(label.get("id"));
-        String name = asString(label.get("name"));
 
-        if (name == null || name.isBlank()) {
+        String name = asString(label.get("name"));
+        if (name == null || name.trim().isEmpty()) {
             name = id;
         }
 
@@ -140,6 +151,7 @@ public class DrugLabelCrawler extends BaseCrawler {
         String source = asString(label.get("source"));
         String textMarkdown = getMarkdownHtml(label, "textMarkdown");
         String summaryMarkdown = getMarkdownHtml(label, "summaryMarkdown");
+
         String raw = gson.toJson(label);
         String drugId = getFirstRelatedChemicalId(label);
 
@@ -147,8 +159,23 @@ public class DrugLabelCrawler extends BaseCrawler {
         String prescribingText = getMarkdownText(label, "prescribingMarkdown");
         String labelText = getMarkdownText(label, "textMarkdown");
 
+        /*
+         * This rule is kept consistent with Chen Xinrui's implementation:
+         * efficacy_summary is populated using the cleaned summary text first;
+         * if summary text is unavailable, cleaned label text is used as fallback.
+         */
         String efficacySummary = firstNonBlank(summaryText, labelText);
+
+        /*
+         * The keyword lists and the search order are kept consistent with
+         * Chen Xinrui's implementation.
+         */
         String responseWarning = buildResponseWarning(prescribingText, labelText, summaryText);
+
+        /*
+         * The alternative-drug field is only generated when PharmGKB marks
+         * alternateDrugAvailable as true.
+         */
         String alternativeDrug = buildAlternativeDrug(
                 alternateDrugAvailable,
                 prescribingText,
@@ -201,8 +228,7 @@ public class DrugLabelCrawler extends BaseCrawler {
                 "reduced effect",
                 "diminished",
                 "risk",
-                "avoid",
-                "consider"
+                "avoid"
         );
 
         if (warningText != null) {
@@ -217,8 +243,7 @@ public class DrugLabelCrawler extends BaseCrawler {
                 "reduced effect",
                 "diminished",
                 "risk",
-                "avoid",
-                "consider"
+                "avoid"
         );
     }
 
@@ -230,37 +255,34 @@ public class DrugLabelCrawler extends BaseCrawler {
             return null;
         }
 
-        String alternativeText = firstMatchingSentence(
+        String alternativeDrugText = firstMatchingSentence(
                 prescribingText,
                 "another",
                 "alternative",
-                "different",
                 "consider",
                 "avoid"
         );
 
-        if (alternativeText != null) {
-            return alternativeText;
+        if (alternativeDrugText != null) {
+            return alternativeDrugText;
         }
 
-        alternativeText = firstMatchingSentence(
+        alternativeDrugText = firstMatchingSentence(
                 summaryText,
                 "another",
                 "alternative",
-                "different",
                 "consider",
                 "avoid"
         );
 
-        if (alternativeText != null) {
-            return alternativeText;
+        if (alternativeDrugText != null) {
+            return alternativeDrugText;
         }
 
         return firstMatchingSentence(
                 labelText,
                 "another",
                 "alternative",
-                "different",
                 "consider",
                 "avoid"
         );
@@ -285,7 +307,7 @@ public class DrugLabelCrawler extends BaseCrawler {
     private String getMarkdownText(Map label, String key) {
         String html = getMarkdownHtml(label, key);
 
-        if (html == null || html.isBlank()) {
+        if (html == null || html.trim().isEmpty()) {
             return null;
         }
 
@@ -294,23 +316,24 @@ public class DrugLabelCrawler extends BaseCrawler {
 
     private String normalizeText(String html) {
         String text = html
-                .replace("<br>", " ")
-                .replace("<br/>", " ")
-                .replace("<br />", " ")
+                .replaceAll("(?i)<br\\s*/?>", " ")
                 .replace("&nbsp;", " ")
+                .replace("&#160;", " ")
                 .replace("&quot;", "\"")
+                .replace("&#34;", "\"")
                 .replace("&#39;", "'")
                 .replace("&apos;", "'")
                 .replace("&amp;", "&");
 
         text = HTML_TAG_PATTERN.matcher(text).replaceAll(" ");
-        text = WHITESPACE_PATTERN.matcher(text).replaceAll(" ").trim();
+        text = WHITESPACE_PATTERN.matcher(text).replaceAll(" ");
+        text = text.replace('\u00A0', ' ').trim();
 
         return text.isEmpty() ? null : text;
     }
 
     private String firstMatchingSentence(String text, String... keywords) {
-        if (text == null || text.isBlank()) {
+        if (text == null || text.trim().isEmpty()) {
             return null;
         }
 
@@ -331,7 +354,7 @@ public class DrugLabelCrawler extends BaseCrawler {
 
     private String firstNonBlank(String... candidates) {
         for (String candidate : candidates) {
-            if (candidate != null && !candidate.isBlank()) {
+            if (candidate != null && !candidate.trim().isEmpty()) {
                 return candidate;
             }
         }

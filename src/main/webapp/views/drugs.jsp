@@ -13,31 +13,26 @@
     <link href="<%= request.getContextPath() %>/static/css/app.css" rel="stylesheet">
 
     <style>
+        .search-bar {
+            margin-bottom: 18px;
+        }
+
         .favorite-btn {
-            width: 26px;
-            height: 26px;
-            border-radius: 50%;
-            border: 1px solid #999;
-            background: #ffffff;
+            border: none;
+            background: transparent;
+            font-size: 18px;
             cursor: pointer;
-            font-size: 14px;
-            line-height: 22px;
-            text-align: center;
-            color: #ffffff;
+            color: #999;
         }
 
         .favorite-btn.favorited {
-            background: #007bff;
-            border-color: #007bff;
-            color: #ffffff;
+            color: #007bff;
+            font-weight: bold;
         }
 
-        .favorite-btn:hover {
-            border-color: #007bff;
-        }
-
-        .search-bar {
-            margin-bottom: 18px;
+        .drug-url-cell {
+            max-width: 360px;
+            word-break: break-all;
         }
     </style>
 </head>
@@ -89,11 +84,11 @@
                     <thead>
                     <tr>
                         <th>Favorite</th>
-                        <th>id</th>
-                        <th>name</th>
-                        <th>obj_cls</th>
-                        <th>drug_url</th>
-                        <th>biomarker</th>
+                        <th>ID</th>
+                        <th>Name</th>
+                        <th>Class</th>
+                        <th>Drug URL</th>
+                        <th>Biomarker</th>
                     </tr>
                     </thead>
 
@@ -104,16 +99,14 @@
                                 <button
                                         type="button"
                                         class="favorite-btn ${drug.favorited ? 'favorited' : ''}"
-                                        data-resource-type="drug"
-                                        data-resource-id="${drug.id}"
-                                        data-favorited="${drug.favorited}">
-                                        ${drug.favorited ? '✓' : ''}
+                                        data-resource-id="${drug.id}">
+                                        ${drug.favorited ? '✓' : '☆'}
                                 </button>
                             </td>
                             <td>${drug.id}</td>
                             <td>${drug.name}</td>
                             <td>${drug.objCls}</td>
-                            <td>
+                            <td class="drug-url-cell">
                                 <a href="${drug.drugUrl}" target="_blank">${drug.drugUrl}</a>
                             </td>
                             <td>${drug.biomarker}</td>
@@ -128,65 +121,38 @@
 </div>
 
 <script>
-    document.addEventListener("DOMContentLoaded", function () {
-        const contextPath = "<%= request.getContextPath() %>";
+    $(document).on("click", ".favorite-btn", function () {
+        const button = $(this);
+        const resourceId = button.data("resource-id");
+        const isFavorited = button.hasClass("favorited");
 
-        document.querySelectorAll(".favorite-btn").forEach(function (btn) {
-            btn.addEventListener("click", function () {
-                const resourceType = btn.getAttribute("data-resource-type");
-                const resourceId = btn.getAttribute("data-resource-id");
-                const isFavorited = btn.getAttribute("data-favorited") === "true";
+        const url = isFavorited
+            ? "<%= request.getContextPath() %>/favorites/remove"
+            : "<%= request.getContextPath() %>/favorites/add";
 
-                const url = isFavorited
-                    ? contextPath + "/favorites/remove"
-                    : contextPath + "/favorites/add";
-
-                const body = "resourceType=" + encodeURIComponent(resourceType)
-                    + "&resourceId=" + encodeURIComponent(resourceId);
-
-                fetch(url, {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8"
-                    },
-                    body: body
-                })
-                    .then(function (response) {
-                        if (response.status === 401) {
-                            window.location.href = contextPath + "/login";
-                            return null;
-                        }
-
-                        if (!response.ok) {
-                            throw new Error("HTTP " + response.status);
-                        }
-
-                        return response.json();
-                    })
-                    .then(function (data) {
-                        if (data === null) {
-                            return;
-                        }
-
-                        if (data.ok) {
-                            if (isFavorited) {
-                                btn.classList.remove("favorited");
-                                btn.setAttribute("data-favorited", "false");
-                                btn.textContent = "";
-                            } else {
-                                btn.classList.add("favorited");
-                                btn.setAttribute("data-favorited", "true");
-                                btn.textContent = "✓";
-                            }
-                        } else {
-                            alert(data.msg || "Failed to update favorite.");
-                        }
-                    })
-                    .catch(function (error) {
-                        console.error(error);
-                        alert("网络错误，请稍后重试");
-                    });
-            });
+        $.ajax({
+            url: url,
+            method: "POST",
+            data: {
+                resourceType: "drug",
+                resourceId: resourceId
+            },
+            success: function () {
+                if (isFavorited) {
+                    button.removeClass("favorited");
+                    button.text("☆");
+                } else {
+                    button.addClass("favorited");
+                    button.text("✓");
+                }
+            },
+            error: function (xhr) {
+                if (xhr.status === 401) {
+                    window.location.href = "<%= request.getContextPath() %>/login";
+                } else {
+                    alert("Failed to update favorite status.");
+                }
+            }
         });
     });
 </script>

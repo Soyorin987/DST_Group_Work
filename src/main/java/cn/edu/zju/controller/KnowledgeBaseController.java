@@ -39,7 +39,14 @@ public class KnowledgeBaseController {
     public void drugs(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        List<Drug> drugs = drugDao.findAll();
+        String keyword = trim(request.getParameter("keyword"));
+
+        List<Drug> drugs;
+        if (!keyword.isEmpty()) {
+            drugs = drugDao.findByKeyword(keyword);
+        } else {
+            drugs = drugDao.findAll();
+        }
 
         User user = (User) request.getSession().getAttribute("user");
 
@@ -58,6 +65,7 @@ public class KnowledgeBaseController {
             }
         }
 
+        request.setAttribute("keyword", keyword);
         request.setAttribute("drugs", drugs);
         request.getRequestDispatcher("/views/drugs.jsp").forward(request, response);
     }
@@ -68,7 +76,6 @@ public class KnowledgeBaseController {
         String keyword = trim(request.getParameter("keyword"));
 
         List<DrugLabel> drugLabels;
-
         if (!keyword.isEmpty()) {
             drugLabels = drugLabelDao.findByKeyword(keyword);
         } else {
@@ -83,7 +90,16 @@ public class KnowledgeBaseController {
     public void dosingGuideline(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
-        List<DosingGuideline> dosingGuidelines = dosingGuidelineDao.findAll();
+        String keyword = trim(request.getParameter("keyword"));
+
+        List<DosingGuideline> dosingGuidelines;
+        if (!keyword.isEmpty()) {
+            dosingGuidelines = dosingGuidelineDao.findByKeyword(keyword);
+        } else {
+            dosingGuidelines = dosingGuidelineDao.findAll();
+        }
+
+        request.setAttribute("keyword", keyword);
         request.setAttribute("dosingGuidelines", dosingGuidelines);
         request.getRequestDispatcher("/views/dosing_guideline.jsp").forward(request, response);
     }
